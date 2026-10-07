@@ -1,0 +1,3 @@
+# Todo lo anterior + Ultralytics/PyTorch para cargar el .pt con YOLO(path) (local / Hugging Face / Docker)
+-r requirements.txt
+ultralytics>=8.3

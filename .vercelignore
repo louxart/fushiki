@@ -1,0 +1,11 @@
+.venv
+__pycache__
+*.pyc
+tools
+Dockerfile
+.dockerignore
+run.bat
+run.sh
+weights/best.pt
+weights/uploaded_*
+*.zip

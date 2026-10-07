@@ -1,0 +1,52 @@
+[
+ {
+  "name": "real_5x5_foto1",
+  "N": 5,
+  "desc": "5×5 · foto real de celular",
+  "image": "real_5x5_foto1.jpg",
+  "thumb": "real_5x5_foto1_thumb.jpg",
+  "real": true
+ },
+ {
+  "name": "4x4_frontal",
+  "N": 4,
+  "desc": "4×4 · toma frontal, luz uniforme",
+  "image": "4x4_frontal.jpg",
+  "thumb": "4x4_frontal_thumb.jpg"
+ },
+ {
+  "name": "4x4_inclinado",
+  "N": 4,
+  "desc": "4×4 · inclinación lateral + rotación",
+  "image": "4x4_inclinado.jpg",
+  "thumb": "4x4_inclinado_thumb.jpg"
+ },
+ {
+  "name": "5x5_sombra",
+  "N": 5,
+  "desc": "5×5 · sombra fuerte del celular",
+  "image": "5x5_sombra.jpg",
+  "thumb": "5x5_sombra_thumb.jpg"
+ },
+ {
+  "name": "5x5_angulo",
+  "N": 5,
+  "desc": "5×5 · ángulo pronunciado, luz cálida",
+  "image": "5x5_angulo.jpg",
+  "thumb": "5x5_angulo_thumb.jpg"
+ },
+ {
+  "name": "6x6_frontal",
+  "N": 6,
+  "desc": "6×6 · toma frontal",
+  "image": "6x6_frontal.jpg",
+  "thumb": "6x6_frontal_thumb.jpg"
+ },
+ {
+  "name": "6x6_tenue",
+  "N": 6,
+  "desc": "6×6 · iluminación tenue + sombra",
+  "image": "6x6_tenue.jpg",
+  "thumb": "6x6_tenue_thumb.jpg"
+ }
+]

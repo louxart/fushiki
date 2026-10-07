@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Futoshiki Solver</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/vendor/katex/katex.min.css">
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%234361ee'/%3E%3Crect x='5' y='5' width='10' height='10' rx='2' fill='white'/%3E%3Crect x='17' y='5' width='10' height='10' rx='2' fill='white'/%3E%3Crect x='5' y='17' width='10' height='10' rx='2' fill='white'/%3E%3Crect x='17' y='17' width='10' height='10' rx='2' fill='white'/%3E%3C/svg%3E">
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <div class="brand"><div class="logo"><span>1</span><span>2</span><span>3</span><span>4</span></div><b>Futoshiki Solver</b></div>
+    <nav class="nav" id="nav">
+      <button data-tab="solver" class="active">Solucionador End-to-End</button>
+      <button data-tab="editor">Editor Manual</button>
+      <button data-tab="pipeline">Pipeline Paso a Paso</button>
+      <button data-tab="dataset">Dataset y Entrenamiento</button>
+      <button data-tab="math">Modelo Matemático CP</button>
+    </nav>
+    <div class="top-actions">
+      <button class="icon-btn" id="themeBtn" title="Modo oscuro"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+      <button class="model-pill" id="modelPill" title="Estado del modelo YOLO"><span class="dot"></span><span id="modelPillTxt">Modelo…</span></button>
+    </div>
+  </div>
+</header>
+
+<main class="page">
+<!-- =================================================================== TAB 1 -->
+<section class="tab active" id="tab-solver">
+  <div class="solver-grid">
+    <!-- columna izquierda -->
+    <div class="card" id="leftCard">
+      <div class="card-h"><div class="step-n">1</div><div><h2>Subir imagen</h2><p>Carga una foto o captura de tu puzzle de Futoshiki.</p></div></div>
+
+      <div class="dropzone" id="dropImg">
+        <svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16l-4-4-4 4"/><path d="M12 12v9"/><path d="M20.4 18.4A5 5 0 0 0 18 9h-1.3A8 8 0 1 0 3 16.3"/></svg>
+        <h3>Arrastra tu imagen aquí</h3>
+        <p>o haz clic para seleccionar un archivo</p>
+        <button class="btn primary" id="pickImg" style="padding:11px 40px">Seleccionar archivo</button>
+        <input type="file" id="imgInput" accept="image/*" hidden>
+      </div>
+      <div class="hint">Formatos soportados: JPG, PNG, WEBP · se optimiza antes de subir</div>
+
+      <div class="loaded" id="loadedBox" hidden>
+        <div class="loaded-h"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="11" fill="var(--green)"/><path d="M7 12.5l3.2 3.2L17 9" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/></svg>Imagen cargada
+          <button class="icon-btn x" id="clearImg" title="Quitar" style="width:32px;height:32px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button></div>
+        <img id="loadedImg" alt="Foto cargada">
+        <div class="loaded-f"><div><b id="loadedName" style="font-weight:500"></b><div class="muted" id="loadedSize"></div></div>
+          <button class="icon-btn" id="zoomImg" title="Ampliar" style="background:var(--primary-soft);color:var(--primary)"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3M11 8v6M8 11h6"/></svg></button></div>
+      </div>
+
+      <div class="subsec">
+        <h4>Motor de inferencia</h4>
+        <div class="seg" id="engineSeg">
+          <button data-engine="yolo">YOLO Propio<small>solo .pt</small></button>
+          <button data-engine="hybrid" class="active">Híbrido<small>YOLO + OCR</small></button>
+          <button data-engine="ocr">OCR<small>correlación</small></button>
+        </div>
+        <div class="field" style="margin-top:10px;align-items:center">
+          <span class="muted" style="font-size:12.5px;white-space:nowrap">Tamaño N</span>
+          <select class="input" id="nHint"><option value="">Auto-detectar</option><option>4</option><option>5</option><option>6</option><option>7</option></select>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- columna derecha -->
+    <div class="right-col">
+      <div class="card stepper" id="stepper">
+        <div class="st" id="st1"><div class="ic">1</div><div><b>Imagen cargada</b><small>Esperando archivo</small></div></div>
+        <div class="st-line" id="ln1"></div>
+        <div class="st" id="st2"><div class="ic">2</div><div><b>OCR detectado</b><small>Tablero sin reconocer</small></div></div>
+        <div class="st-line" id="ln2"></div>
+        <div class="st" id="st3"><div class="ic">3</div><div><b>Resolución completada</b><small>Pendiente</small></div></div>
+        <div class="ready"><div><small>Listo en</small><b id="readyTime">—</b></div></div>
+      </div>
+
+      <div class="boards-row">
+        <div class="card">
+          <div class="card-h"><div class="step-n">2</div><div><h3>Tablero detectado</h3><p>Revisamos tu imagen y detectamos el tablero automáticamente.</p></div><div class="right"><span class="badge" id="sizeBadge">N × N</span></div></div>
+          <div class="board-wrap" id="detWrap"><div class="overlay-load" id="detLoad"><svg class="spin" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-6.2-8.6" stroke-linecap="round"/></svg></div><div id="detBoard"></div></div>
+          <div id="detEngine" style="margin-top:10px;color:var(--ink-2);font-size:11.5px;text-align:center"></div>
+          <div class="legend" id="detLegend" hidden><span><i style="border-color:var(--cell-border)"></i>confianza alta</span><span><i style="border-color:var(--amber);background:var(--amber-soft)"></i>revisar (&lt; 70 %)</span></div>
+          <div class="under-btns">
+            <button class="btn" id="retryBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>Reintentar detección</button>
+            <button class="btn" id="editBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Editar tablero</button>
+            <button class="btn ghost" id="origBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>Ver imagen original</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h"><div class="step-n">3</div><div><h3>Solución</h3><p>Aplicamos lógica (CP-SAT) y encontramos la solución para tu Futoshiki.</p></div><div class="right"><span class="badge gray" id="solvedBadge">Pendiente</span></div></div>
+          <div class="board-wrap" id="solWrap"><div id="solBoard"></div></div>
+          <div class="legend" id="solLegend" hidden><span><i style="border-color:var(--cell-border)"></i><b style="color:var(--ink)">n</b> pista impresa</span><span><i style="border-color:var(--cell-border)"></i><b style="color:var(--primary-ink)">n</b> calculado por CP-SAT</span></div>
+          <button class="btn grad" id="resolveBtn" style="width:100%;margin-top:16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.2L19 9l-5.2 1.8L12 16l-1.8-5.2L5 9l5.2-1.8zM19 14l.9 2.6 2.6.9-2.6.9L19 21l-.9-2.6-2.6-.9 2.6-.9zM5 15l.6 1.6 1.6.6-1.6.6L5 19.4l-.6-1.6-1.6-.6 1.6-.6z"/></svg>Resolver de nuevo</button>
+          <div class="under-btns" style="margin-top:10px">
+            <div class="dl">
+              <button class="btn" id="dlBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></svg>Descargar solución <span style="margin-left:4px;border-left:1px solid var(--border);padding-left:8px">▾</span></button>
+              <div class="menu" id="dlMenu">
+                <button data-dl="json">Estado formal (.json)</button>
+                <button data-dl="py">Matriz Python (.py)</button>
+                <button data-dl="txt">Tablero ASCII (.txt)</button>
+                <button data-dl="png">Foto con proyección (.jpg)</button>
+                <button data-dl="svg">Render vectorial (.svg)</button>
+              </div>
+            </div>
+            <button class="btn" id="copyBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>Copiar resultado</button>
+          </div>
+        </div>
+      </div>
+      
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="card stat"><div class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></div><div><small>Tamaño del puzzle</small><b id="sSize">—</b><span id="sSizeSub">sin tablero</span></div></div>
+    <div class="card stat"><div class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg></div><div><small>Precisión de detección</small><b id="sAcc">—</b><span id="sAccSub">confianza media del clasificador</span></div></div>
+    <div class="card stat"><div class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M13 2L4 14h7l-1 8 9-12h-7z"/></svg></div><div><small>Tiempo de resolución</small><b id="sTime">—</b><span id="sTimeSub">CP-SAT</span></div></div>
+    <div class="card stat"><div class="si"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg></div><div><small>Solución única</small><b id="sUniq">—</b><span id="sUniqSub">demostración por corte</span></div></div>
+  </div>
+
+  <div class="card" style="margin-top:20px">
+    <div class="card-h"><div class="step-n">4</div><div><h3>Visualización aumentada</h3><p>Solución proyectada sobre la perspectiva original con M⁻¹, vista canónica cenital y render digital limpio.</p></div></div>
+    <div class="vis-row">
+      <div class="vis"><div class="vis-h">Foto original + solución proyectada <small>M⁻¹</small></div><div class="vis-b" id="visProj"><span class="muted">Sin imagen</span></div></div>
+      <div class="vis"><div class="vis-h">Tablero cenital <small>vista canónica · M</small></div><div class="vis-b" id="visTop"><span class="muted">Sin imagen</span></div></div>
+      <div class="vis"><div class="vis-h">Render vectorial <small>SVG</small></div><div class="vis-b" id="visSvg"><span class="muted">Sin tablero</span></div></div>
+    </div>
+  </div>
+
+  <div class="tele-row">
+    <div class="card">
+      <div class="card-h"><div class="step-n">5</div><div><h3>Telemetría OR-Tools CP-SAT</h3><p>Estadísticas del solver y demostración de unicidad.</p></div><div class="right"><span class="badge gray" id="teleStatus">—</span></div></div>
+      <div class="kv" id="teleKv"></div>
+      <div class="tele-sub" id="teleSub"></div>
+      <div id="teleDiag"></div>
+    </div>
+    <div class="card">
+      <div class="card-h"><div class="step-n">6</div><div><h3>Estado formal exportable</h3><p>JSON, matriz Python y tablero en texto ASCII.</p></div><div class="right"><button class="btn sm" id="copyExport">Copiar</button><button class="btn sm" id="dlExport">Descargar</button></div></div>
+      <div class="tabs-mini" id="expTabs"><button data-exp="json" class="active">JSON</button><button data-exp="python">Matriz Python</button><button data-exp="ascii">ASCII</button><button data-exp="detail">Detección</button></div>
+      <pre class="code" id="expPre">// Sube una foto o elige un caso de prueba</pre>
+    </div>
+  </div>
+</section>
+
+<!-- =================================================================== TAB 2 -->
+<section class="tab" id="tab-editor">
+  <div class="editor-grid">
+    <div class="card">
+      <div class="card-h"><div class="step-n">✎</div><div><h3>Editor Manual Human-in-the-Loop</h3><p>Escribe un dígito en una celda; haz clic en un espaciador para alternar ∅ → &lt; → &gt; (o ∅ → ∧ → ∨).</p></div></div>
+      <div class="ed-tools">
+        <label>Tamaño <select class="input" id="edN" style="width:auto"><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option></select></label>
+        <button class="btn sm" id="edFromDet">Cargar desde detección</button>
+        <button class="btn sm" id="edClear">Limpiar</button>
+        <button class="btn sm" id="edBad" title="Tablero con una lectura de cámara inconsistente">Probar diagnóstico</button>
+        <label style="margin-left:auto">Resolver en tiempo real <button class="switch on" id="edLive"></button></label>
+      </div>
+      <div class="board-wrap" style="min-height:380px"><div id="edBoard"></div></div>
+      <div class="legend"><span><i style="border-color:var(--red);background:var(--red-soft)"></i>restricción sospechosa (diagnóstico reificado)</span></div>
+      <button class="btn grad" id="edSolve" style="width:100%;margin-top:16px">Resolver con CP-SAT</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:20px">
+      <div class="card">
+        <div class="card-h"><div class="step-n">✓</div><div><h3>Resultado</h3><p id="edResSub">Edita el tablero para resolverlo.</p></div><div class="right"><span class="badge gray" id="edBadge">—</span></div></div>
+        <div class="board-wrap solved" id="edSolWrap" style="min-height:300px"><div id="edSol"></div></div>
+        <div class="kv" id="edKv" style="margin-top:14px"></div>
+        <div id="edDiag"></div>
+      </div>
+      <div class="card" id="edProjCard" hidden>
+        <div class="card-h"><div><h3>Re-proyección sobre la foto</h3><p>La corrección manual se proyecta de nuevo con M⁻¹ de la última detección.</p></div></div>
+        <div class="vis"><div class="vis-b" id="edProj"></div></div>
+      </div>
+      <div class="card">
+        <div class="tabs-mini" id="edExpTabs"><button data-exp="json" class="active">JSON</button><button data-exp="python">Matriz Python</button><button data-exp="ascii">ASCII</button></div>
+        <pre class="code" id="edExpPre">—</pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================================================================== TAB 3 -->
+<section class="tab" id="tab-pipeline">
+  <div class="doc">
+    <div class="card">
+      <span class="phase">Arquitectura end-to-end</span>
+      <h2>De la foto del celular al tablero resuelto</h2>
+      <p class="lead">Tres fases encadenadas: visión computacional e IA para leer el tablero, programación con restricciones para razonar, y visualización aumentada para devolver el resultado sobre la foto.</p>
+      <div class="flow" style="margin-top:16px">
+        <div class="fstep"><b>1 · Pre-proceso</b><span>Filtro bilateral + binarización adaptativa de Gauss</span></div><div class="arrow">→</div>
+        <div class="fstep"><b>2 · Homografía ×2</b><span>Hoja/mesa (M₁) + celdas (M₂) · M = M₂M₁</span></div><div class="arrow">→</div>
+        <div class="fstep"><b>3 · Segmentación</b><span>Celdas y espaciadores · ρ &lt; 0.02 = vacío</span></div><div class="arrow">→</div>
+        <div class="fstep"><b>4 · Lectura</b><span>YOLOv11-cls propio · OCR NCC · apertura de brazos</span></div><div class="arrow">→</div>
+        <div class="fstep"><b>5 · CP-SAT</b><span>AllDifferent + desigualdades + unicidad</span></div><div class="arrow">→</div>
+        <div class="fstep"><b>6 · Proyección</b><span>Dígitos dibujados con M⁻¹ sobre la foto</span></div>
+      </div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <span class="phase">Fase 1 · Pre-proceso</span>
+        <h3>Filtro bilateral + umbral adaptativo gaussiano</h3>
+        <p>El filtro bilateral suaviza el ruido del sensor sin borrar los bordes de la tinta. Luego, cada píxel se compara con la media gaussiana de su vecindario (bloque ≈ lado/40): así una sombra que oscurece media hoja no se confunde con tinta.</p>
+        <div class="math" id="m-thr"></div>
+      </div>
+      <div class="card">
+        <span class="phase">Fase 1 · Segmentación</span>
+        <h3>Celdas, espaciadores y densidad de tinta</h3>
+        <p>En la vista canónica cada celda mide 100 px y el espaciador g·100 px (g se mide en la foto). Se recorta el interior de cada celda (sin el borde de la caja) y cada espaciador, se eliminan motas y restos de líneas, y se calcula ρ:</p>
+        <div class="math" id="m-rho"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="phase">Fase 1 · Corrección proyectiva en 2 fases</span>
+      <h3>Homografía hoja/mesa → refinamiento por celdas</h3>
+      <svg class="diagram" viewBox="0 -50 1100 350" role="img" aria-label="Diagrama de homografía en dos fases">
+        <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="acc-f"/></marker>
+        <marker id="ar2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--green)"/></marker></defs>
+        <!-- foto -->
+        <rect x="10" y="30" width="300" height="225" rx="10" fill="var(--card-2)" stroke="var(--border-strong)"/>
+        <polygon points="95,55 270,75 245,235 45,215" class="paper" stroke-width="1.5"/>
+        <g class="acc" stroke-width="2.5"><polygon points="95,55 270,75 245,235 45,215" fill="none"/></g>
+        <g fill="var(--primary)"><circle cx="95" cy="55" r="5"/><circle cx="270" cy="75" r="5"/><circle cx="245" cy="235" r="5"/><circle cx="45" cy="215" r="5"/></g>
+        <g class="ln" stroke-width="1.5"><polygon points="115,100 150,103 146,136 110,133"/><polygon points="170,106 205,109 201,142 166,139"/><polygon points="105,155 141,158 137,192 100,189"/><polygon points="161,161 197,164 193,198 156,195"/></g>
+        <text x="160" y="280" text-anchor="middle" class="t-strong">Foto original</text>
+        <!-- flecha M1 -->
+        <path d="M325 140 H 405" class="acc" stroke-width="2" marker-end="url(#ar)"/>
+        <text x="365" y="128" text-anchor="middle" class="t-strong">M₁</text><text x="365" y="160" text-anchor="middle">contorno hoja</text>
+        <!-- hoja rectificada -->
+        <rect x="420" y="30" width="250" height="225" rx="10" fill="var(--card-2)" stroke="var(--border-strong)"/>
+        <rect x="440" y="45" width="210" height="195" class="paper"/>
+        <g class="ln" stroke-width="1.5"><rect x="490" y="95" width="38" height="38"/><rect x="552" y="98" width="38" height="38"/><rect x="487" y="157" width="38" height="38"/><rect x="550" y="160" width="38" height="38"/></g>
+        <g fill="var(--green)"><circle cx="490" cy="95" r="5"/><circle cx="590" cy="98" r="5"/><circle cx="588" cy="198" r="5"/><circle cx="487" cy="195" r="5"/></g>
+        <text x="545" y="280" text-anchor="middle" class="t-strong">Hoja rectificada · cajas detectadas</text>
+        <!-- flecha M2 -->
+        <path d="M685 140 H 765" stroke="var(--green)" stroke-width="2" fill="none" marker-end="url(#ar2)"/>
+        <text x="725" y="128" text-anchor="middle" class="t-strong">M₂</text><text x="725" y="160" text-anchor="middle">esquinas celdas</text>
+        <!-- canónica -->
+        <rect x="780" y="30" width="225" height="225" rx="10" fill="var(--card-2)" stroke="var(--border-strong)"/>
+        <g stroke="var(--ink)" stroke-width="2" fill="var(--card)"><rect x="815" y="65" width="62" height="62"/><rect x="908" y="65" width="62" height="62"/><rect x="815" y="158" width="62" height="62"/><rect x="908" y="158" width="62" height="62"/></g>
+        <path d="M877 75 v42 M908 75 v42" class="ln" stroke-dasharray="3 3"/><text x="892" y="62" text-anchor="middle" font-size="11">g</text>
+        <text x="892" y="280" text-anchor="middle" class="t-strong">Vista canónica (100 px/celda)</text>
+        <!-- M inversa -->
+        <path d="M890 22 C 700 -20, 360 -20, 170 26" stroke="var(--primary-2)" stroke-width="1.8" fill="none" stroke-dasharray="6 5" marker-end="url(#ar)"/>
+        <text x="540" y="-22" text-anchor="middle" class="t-strong" style="fill:var(--primary-2)">M⁻¹ = (M₂·M₁)⁻¹ → proyección de la solución</text>
+        <text x="1050" y="140" text-anchor="middle" font-size="11">x' = M·x</text>
+      </svg>
+      <div class="math" id="m-hom"></div>
+    </div>
+
+    <div class="two">
+      <div class="card">
+        <span class="phase">Fase 1 · Signos</span>
+        <h3>Regla geométrica de apertura de brazos</h3>
+        <p>Un signo es un ángulo: un vértice y dos brazos. En el tercio donde los brazos están <b>abiertos</b> la tinta se dispersa más en el eje perpendicular al espaciador. Comparando la dispersión del primer y último tercio se decide el sentido sin entrenar nada.</p>
+        <svg class="diagram" viewBox="0 0 520 210" role="img" aria-label="Regla de apertura de brazos">
+          <rect x="10" y="10" width="230" height="170" rx="10" fill="var(--card-2)" stroke="var(--border-strong)"/>
+          <rect x="45" y="30" width="48" height="130" class="soft"/><rect x="157" y="30" width="48" height="130" class="soft"/>
+          <path d="M195 45 L 55 95 L 195 145" class="ink"/>
+          <path d="M215 45 V145" class="acc" stroke-width="2"/><text x="222" y="100" font-size="11" class="t-strong" style="fill:var(--primary)">a₂</text>
+          <path d="M35 89 V101" class="acc" stroke-width="2"/><text x="20" y="100" font-size="11" class="t-strong" style="fill:var(--primary)">a₁</text>
+          <text x="125" y="200" text-anchor="middle" class="t-strong">a₂ &gt; a₁ ⇒ “&lt;”</text>
+          <rect x="280" y="10" width="230" height="170" rx="10" fill="var(--card-2)" stroke="var(--border-strong)"/>
+          <rect x="320" y="25" width="150" height="40" class="soft"/><rect x="320" y="125" width="150" height="40" class="soft"/>
+          <path d="M335 155 L 395 35 L 455 155" class="ink"/>
+          <text x="395" y="200" text-anchor="middle" class="t-strong">abierto abajo ⇒ “∧” (X↑ &lt; X↓)</text>
+        </svg>
+        <div class="math" id="m-arm"></div>
+      </div>
+      <div class="card">
+        <span class="phase">Fase 1 · Lectura de pistas</span>
+        <h3>YOLOv11-cls propio · OCR estructural · Híbrido</h3>
+        <ul>
+          <li><b>YOLO Propio</b>: cada recorte 64×64 (fondo blanco, tinta oscura) se clasifica con <code>YOLO(path).predict()</code> en lote; clases <code>1…6</code> y <code>vacio</code>. Se restringe a 1…N.</li>
+          <li><b>OCR</b>: el glifo se recorta a su caja, se normaliza a 32×32 y se compara con plantillas Hershey de 1…N mediante correlación cruzada normalizada (TM_CCOEFF_NORMED).</li>
+          <li><b>Híbrido</b>: usa YOLO si la confianza es ≥ 0.60; si no, desempata con OCR. Las celdas con baja confianza se marcan en ámbar para revisión humana.</li>
+        </ul>
+        <div class="math" id="m-ncc"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <span class="phase">Última ejecución</span>
+      <h3>Imágenes intermedias del pipeline</h3>
+      <p id="dbgEmpty">Resuelve una foto en la pestaña <b>Solucionador End-to-End</b> para ver aquí cada etapa con tus propias imágenes.</p>
+      <div class="dbg-grid" id="dbgGrid"></div>
+    </div>
+  </div>
+</section>
+
+<!-- =================================================================== TAB 4 -->
+<section class="tab" id="tab-dataset">
+  <div class="doc">
+    <div class="card">
+      <span class="phase">Dataset propio</span>
+      <h2>68 fotos → 4,839 recortes normalizados a 64×64 px</h2>
+      <p class="lead">Fotos tomadas con cámara móvil en distintas condiciones de iluminación y ángulos de inclinación; cada foto se rectifica y segmenta en ~71 recortes (celdas y espaciadores).</p>
+      <div class="three" style="margin-top:18px">
+        <div class="card" style="box-shadow:none"><small class="muted">Imágenes de cámara</small><span class="big-num">68</span><span class="muted">iluminación y ángulos variados</span></div>
+        <div class="card" style="box-shadow:none"><small class="muted">Recortes individuales</small><span class="big-num">4,839</span><span class="muted">≈ 71 por foto · 64×64 px</span></div>
+        <div class="card" style="box-shadow:none"><small class="muted">Recortes con tinta</small><span class="big-num">1,574</span><span class="muted">792 dígitos + 782 signos (32.5 %)</span></div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>Distribución por clase</h3>
+        <p class="muted" style="margin-top:0;font-size:12.5px">Número de recortes · pasa el cursor por una barra para ver el porcentaje</p>
+        <div id="chartClasses"></div>
+      </div>
+      <div class="card">
+        <h3>Tabla de clases</h3>
+        <table class="tbl" id="tblClasses"></table>
+        <div class="callout" style="margin-top:14px">El clasificador YOLO lee <b>dígitos y vacío</b>; los signos se resuelven con la regla geométrica de apertura de brazos, por eso sus 782 recortes sirven para validar esa regla.</div>
+      </div>
+    </div>
+    <div class="two">
+      <div class="card">
+        <h3>Curvas de entrenamiento del modelo cargado</h3>
+        <p class="muted" style="margin-top:0;font-size:12.5px" id="trainSub">Leídas del checkpoint <code>.pt</code> (train_results)</p>
+        <div id="chartLoss"></div>
+        <div id="chartAcc" style="margin-top:12px"></div>
+      </div>
+      <div class="card">
+        <h3>Metadatos del checkpoint</h3>
+        <table class="tbl" id="tblTrain"></table>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Instrucciones de entrenamiento (Ultralytics YOLOv11-cls)</h3>
+      <div class="two" style="margin-top:10px">
+        <div>
+          <p><b>1. Estructura del dataset</b> (formato de clasificación por carpetas):</p>
+<pre class="code">dataset/
+├── train/
+│   ├── 1/      img_0001.png …
+│   ├── 2/
+│   ├── …
+│   ├── 6/
+│   └── vacio/  (ρ &lt; 0.02)
+└── val/
+    ├── 1/ … 6/
+    └── vacio/</pre>
+          <p><b>2. Generar recortes</b> desde tus fotos con el propio pipeline (vista canónica → <code>make_crop64</code>).</p>
+        </div>
+        <div>
+          <p><b>3. Fine-tuning</b> sobre <code>yolo11n-cls.pt</code>:</p>
+<pre class="code"><span class="p"># CLI</span>
+yolo classify train model=yolo11n-cls.pt data=dataset \
+     imgsz=96 epochs=60 batch=16 optimizer=AdamW patience=20
+
+<span class="p"># Python</span>
+<span class="k">from</span> ultralytics <span class="k">import</span> YOLO
+model = YOLO(<span class="s">"yolo11n-cls.pt"</span>)
+model.train(data=<span class="s">"dataset"</span>, imgsz=<span class="n">96</span>, epochs=<span class="n">60</span>)
+<span class="p"># → runs/classify/train/weights/best.pt</span></pre>
+          <p><b>4. Integración</b>: copia <code>best.pt</code> a <code>weights/</code> o arrástralo en el panel «Modelo propio». El backend ejecuta:</p>
+<pre class="code"><span class="k">from</span> ultralytics <span class="k">import</span> YOLO
+model = YOLO(path)          <span class="p"># carga dinámica</span>
+res = model.predict(crops)  <span class="p"># celdas → clasificador</span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =================================================================== TAB 5 -->
+<section class="tab" id="tab-math">
+  <div class="doc">
+    <div class="card">
+      <span class="phase">Fase 2 · Constraint Programming</span>
+      <h2>Formulación formal en Google OR-Tools CP-SAT</h2>
+      <p class="lead">El tablero leído por visión se convierte en un problema de satisfacción de restricciones con variables enteras. CP-SAT combina propagación, búsqueda y aprendizaje de cláusulas (LCG).</p>
+    </div>
+    <div class="two">
+      <div class="card"><h3>Conjuntos, variables y dominios</h3><div class="math" id="m-vars"></div></div>
+      <div class="card"><h3>Restricciones globales AllDifferent</h3><div class="math" id="m-alldiff"></div></div>
+    </div>
+    <div class="two">
+      <div class="card"><h3>Pistas iniciales y desigualdades estrictas</h3><div class="math" id="m-ineq"></div></div>
+      <div class="card"><h3>Demostración de unicidad</h3><p>Tras hallar Sol₁ se añade un corte que la excluye. Si el nuevo modelo es INFEASIBLE, la solución es única (demostración exhaustiva del solver).</p><div class="math" id="m-uniq"></div></div>
+    </div>
+    <div class="card">
+      <h3>Diagnóstico de fallos de cámara con restricciones reificadas</h3>
+      <p>Si la lectura tiene un error (p. ej. un “3” leído como “5”, o un “&lt;” invertido) el modelo puede quedar INFEASIBLE. Cada pista y desigualdad Cᵢ se reifica con un literal Bᵢ y se maximiza el número de restricciones satisfechas; las que quedan con Bᵢ = 0 son las sospechosas y se resaltan en rojo en el editor.</p>
+      <div class="math" id="m-reif"></div>
+    </div>
+    <div class="card">
+      <h3>Implementación (pipeline/solver.py)</h3>
+<pre class="code" style="max-height:none"><span class="k">from</span> ortools.sat.python <span class="k">import</span> cp_model
+m = cp_model.CpModel()
+X = [[m.NewIntVar(<span class="n">1</span>, N, <span class="s">f"X_{r}_{c}"</span>) <span class="k">for</span> c <span class="k">in</span> range(N)] <span class="k">for</span> r <span class="k">in</span> range(N)]
+<span class="k">for</span> i <span class="k">in</span> range(N):
+    m.AddAllDifferent(X[i])                          <span class="p"># filas</span>
+    m.AddAllDifferent([X[r][i] <span class="k">for</span> r <span class="k">in</span> range(N)])     <span class="p"># columnas</span>
+<span class="k">for</span> (r, c), v <span class="k">in</span> givens.items():  m.Add(X[r][c] == v)
+<span class="k">for</span> (r, c) <span class="k">in</span> less_h:             m.Add(X[r][c] &lt; X[r][c+<span class="n">1</span>])
+<span class="k">for</span> (r, c) <span class="k">in</span> less_v:             m.Add(X[r][c] &lt; X[r+<span class="n">1</span>][c])   <span class="p"># '∧'</span>
+
+<span class="p"># unicidad: SUM(X_rc != Sol1_rc) &gt;= 1</span>
+d = {rc: m.NewBoolVar(<span class="s">""</span>) <span class="k">for</span> rc <span class="k">in</span> cells}
+<span class="k">for</span> (r, c), b <span class="k">in</span> d.items():
+    m.Add(X[r][c] != sol1[r][c]).OnlyEnforceIf(b)
+    m.Add(X[r][c] == sol1[r][c]).OnlyEnforceIf(b.Not())
+m.Add(sum(d.values()) &gt;= <span class="n">1</span>)    <span class="p"># INFEASIBLE ⇒ solución única</span>
+
+<span class="p"># diagnóstico: B_i ⇒ C_i ; max Σ B_i</span>
+B = [m.NewBoolVar(<span class="s">f"B_{i}"</span>) <span class="k">for</span> i <span class="k">in</span> range(len(C))]
+<span class="k">for</span> Ci, Bi <span class="k">in</span> zip(C, B): add(Ci).OnlyEnforceIf(Bi)
+m.Maximize(sum(B))</pre>
+    </div>
+  </div>
+</section>
+</main>
+
+<div class="modal" id="modal"><div><img id="modalImg" alt=""><div class="cap" id="modalCap"></div></div></div>
+<div class="toast" id="toast"></div>
+<div class="chart-tip" id="tip"></div>
+
+<script src="/static/vendor/katex/katex.min.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

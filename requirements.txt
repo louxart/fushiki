@@ -1,0 +1,8 @@
+# Dependencias livianas (sin PyTorch): las usa Vercel. El modelo corre con weights/best.onnx.
+fastapi>=0.110
+uvicorn>=0.29
+python-multipart>=0.0.9
+numpy>=1.26
+opencv-python-headless>=4.9
+ortools>=9.10
+onnxruntime>=1.17
