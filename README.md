@@ -1,27 +1,3 @@
-Solucionador Automático de Futoshiki
-Sistema que resuelve acertijos Futoshiki a partir de una foto tomada con el celular. Lee el tablero con visión computacional, reconoce los dígitos con un modelo YOLOv11 entrenado por el equipo, resuelve el acertijo con Google OR-Tools (CP-SAT) y dibuja la solución sobre la foto original.
-Autores
-Nicole Yessenia Vasquez Tinco
-Alessandro Daniel Bravo Castillo
-Alessandro Elías Hesse Pulache
-Enlaces
-Recurso	URL
-Demo desplegada (Vercel)	`<!-- completar: https://xxxx.vercel.app -->`
-Repositorio desplegable	`<!-- completar: https://github.com/USUARIO/REPO -->`
-Repositorio de notebooks	https://github.com/Crostz/TB1_Topicos_CC
----
-Tabla de contenidos
-Arquitectura general
-Stack tecnológico
-Fase 1: Visión y preprocesamiento de la foto
-Modelo de reconocimiento de dígitos (YOLOv11-cls)
-Lectura de símbolos y armado del JSON
-Fase 2: Modelo de Constraint Programming (CP-SAT)
-Fase 3: Dibujo de la solución sobre la foto
-Despliegue
-Ejecución local
-Referencias
----
 1. Arquitectura general
 ```
  Foto (celular / PC)
